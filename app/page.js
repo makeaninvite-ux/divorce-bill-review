@@ -1,33 +1,54 @@
+"use client";
+
+import { useState } from "react";
+
 export default function Home() {
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState("");
+
+  async function handleSubmit() {
+    if (!file) return;
+
+    setLoading(true);
+    setResult("");
+
+    const text = await file.text();
+
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt: `Analyze this legal invoice and flag questionable items:\n\n${text}`,
+      }),
+    });
+
+    const data = await res.json();
+    setResult(JSON.stringify(data, null, 2));
+    setLoading(false);
+  }
+
   return (
-    <main style={{ maxWidth: 880, margin: "0 auto", padding: "48px 24px" }}>
-      <div style={{ borderBottom: "1px solid #c9c4bb", paddingBottom: 20, marginBottom: 36 }}>
-        <div style={{ fontSize: 14, letterSpacing: 1.2, textTransform: "uppercase", color: "#8a8680", marginBottom: 8 }}>
-          Divorce Bill Review
-        </div>
-        <h1 style={{ margin: 0, fontSize: 44, lineHeight: 1.05, fontWeight: 700 }}>
-          Know what to question.
-        </h1>
-      </div>
+    <main style={{ padding: 40, maxWidth: 800 }}>
+      <h1>Divorce Bill Review</h1>
+      <p>Know what to question.</p>
 
-      <p style={{ fontSize: 18, lineHeight: 1.7, color: "#5f5b55", maxWidth: 700, marginBottom: 28 }}>
-        Upload your divorce attorney invoice. We read each line item and flag entries worth following up on.
-      </p>
+      <input
+        type="file"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+      />
 
-      <div style={{ background: "#f0eee9", border: "1px solid #c9c4bb", borderRadius: 8, padding: 24, marginBottom: 20 }}>
-        <div style={{ fontWeight: 600, marginBottom: 8 }}>Current starter</div>
-        <div style={{ color: "#5f5b55", lineHeight: 1.7, marginBottom: 16 }}>
-          This is the clean Vercel starter. The page is live first. The AI endpoint is included separately at <code>/api/analyze</code>.
-        </div>
-        <input type="file" style={{ display: "block", marginBottom: 12 }} />
-        <button style={{ background: "#1a1d21", color: "#faf8f3", border: 0, borderRadius: 6, padding: "14px 18px", fontWeight: 600, cursor: "pointer" }}>
-          Find Items to Question
-        </button>
-      </div>
+      <br /><br />
 
-      <div style={{ fontSize: 14, color: "#8a8680", lineHeight: 1.7 }}>
-        This starter is intentionally minimal so it deploys cleanly on Vercel before adding the rest of the product.
-      </div>
+      <button onClick={handleSubmit} disabled={loading}>
+        {loading ? "Analyzing..." : "Find Items to Question"}
+      </button>
+
+      <pre style={{ marginTop: 20, whiteSpace: "pre-wrap" }}>
+        {result}
+      </pre>
     </main>
   );
 }
